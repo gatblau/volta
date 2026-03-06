@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"github.com/awnumar/memguard"
+	"github.com/gatblau/volta/internal/crypto"
+	"github.com/gatblau/volta/persist"
 	"os"
-	"southwinds.dev/volta/internal/crypto"
-	"southwinds.dev/volta/persist"
 	"testing"
 	"time"
 )

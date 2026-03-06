@@ -3,11 +3,11 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/gatblau/volta"
+	"github.com/gatblau/volta/audit"
 	"log"
 	"os"
 	"path/filepath"
-	"southwinds.dev/volta"
-	"southwinds.dev/volta/audit"
 )
 
 const (

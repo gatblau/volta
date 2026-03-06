@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"southwinds.dev/volta"
-	"southwinds.dev/volta/audit"
+	"github.com/gatblau/volta"
+	"github.com/gatblau/volta/audit"
 )
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 	}
 	fmt.Println("✓ VaultManager options configured")
 
-	// 2. Initialize the audit logger.
+	// 2. Initialise the audit logger.
 	// This logger records all significant vault management and cryptographic events.
 	auditLogger, err := createAuditLogger()
 	if err != nil {

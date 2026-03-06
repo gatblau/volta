@@ -10,8 +10,8 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/gatblau/volta/audit"
 	"github.com/spf13/cobra"
-	"southwinds.dev/volta/audit"
 )
 
 var (

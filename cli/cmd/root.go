@@ -3,15 +3,15 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/gatblau/volta"
+	"github.com/gatblau/volta/audit"
+	"github.com/gatblau/volta/persist"
 	"github.com/google/uuid"
 	"github.com/spf13/pflag"
 	"log"
 	"os"
 	"os/user"
 	"path/filepath"
-	"southwinds.dev/volta"
-	"southwinds.dev/volta/audit"
-	"southwinds.dev/volta/persist"
 	"strings"
 	"time"
 

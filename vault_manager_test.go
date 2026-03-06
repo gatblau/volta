@@ -2,9 +2,9 @@ package volta
 
 import (
 	"fmt"
+	"github.com/gatblau/volta/audit"
+	"github.com/gatblau/volta/persist"
 	"os"
-	"southwinds.dev/volta/audit"
-	"southwinds.dev/volta/persist"
 	"strings"
 	"sync"
 	"testing"

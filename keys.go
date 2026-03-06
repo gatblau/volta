@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/awnumar/memguard"
+	"github.com/gatblau/volta/internal/crypto"
+	"github.com/gatblau/volta/internal/debug"
 	"os"
 	"runtime"
-	"southwinds.dev/volta/internal/crypto"
-	"southwinds.dev/volta/internal/debug"
 	"time"
 )
 

@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"southwinds.dev/volta"
-	"southwinds.dev/volta/audit"
+	"github.com/gatblau/volta"
+	"github.com/gatblau/volta/audit"
 )
 
 func main() {

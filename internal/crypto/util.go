@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/awnumar/memguard"
+	"github.com/gatblau/volta/internal/misc"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/pbkdf2"
-	"southwinds.dev/volta/internal/misc"
 )
 
 // EncryptWithPassphrase encrypts data using a passphrase with PBKDF2 + ChaCha20-Poly1305

@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/awnumar/memguard"
-	"southwinds.dev/volta/internal/backup"
-	"southwinds.dev/volta/internal/crypto"
-	"southwinds.dev/volta/internal/debug"
-	"southwinds.dev/volta/internal/misc"
-	"southwinds.dev/volta/persist"
+	"github.com/gatblau/volta/internal/backup"
+	"github.com/gatblau/volta/internal/crypto"
+	"github.com/gatblau/volta/internal/debug"
+	"github.com/gatblau/volta/internal/misc"
+	"github.com/gatblau/volta/persist"
 )
 
 // Backup creates a complete encrypted backup of the vault to a specified directory.

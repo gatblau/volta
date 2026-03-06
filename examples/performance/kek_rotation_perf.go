@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"southwinds.dev/volta"
-	"southwinds.dev/volta/audit"
+	"github.com/gatblau/volta"
+	"github.com/gatblau/volta/audit"
 )
 
 const passphrase = "test-passphrase-for-performance-testing"

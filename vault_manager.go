@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"southwinds.dev/volta/audit"
-	"southwinds.dev/volta/persist"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/gatblau/volta/audit"
+	"github.com/gatblau/volta/persist"
 )
 
 // VaultManager manages vault instances per tenant
@@ -3520,7 +3521,7 @@ func (tm *VaultManager) DeleteTenant(tenantID string) error {
 
 	// Final audit logs based on outcome
 	if len(cleanupErrors) > 0 {
-		combinedError := fmt.Errorf(strings.Join(cleanupErrors, "; "))
+		combinedError := fmt.Errorf("%s", strings.Join(cleanupErrors, "; "))
 		tm.logAudit(requestID, "DELETE_TENANT_PARTIAL_FAILURE", tenantID, combinedError, map[string]interface{}{
 			"cleanup_errors_count": len(cleanupErrors),
 			"cleanup_errors":       cleanupErrors,

@@ -7,8 +7,8 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/gatblau/volta"
 	"github.com/spf13/cobra"
-	"southwinds.dev/volta"
 )
 
 var tenantCmd = &cobra.Command{

@@ -3,7 +3,7 @@ package volta
 import (
 	"encoding/json"
 	"fmt"
-	"southwinds.dev/volta/internal/crypto"
+	"github.com/gatblau/volta/internal/crypto"
 	"time"
 )
 

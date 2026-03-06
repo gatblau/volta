@@ -140,7 +140,7 @@ multiple tenants using Volta.
 ### Installation
 
 ```sh
-go get southwinds.dev/volta
+go get github.com/gatblau/volta
 ```
 
 ### Security Model

@@ -1,6 +1,6 @@
 package main
 
-import "southwinds.dev/volta/cli/cmd"
+import "github.com/gatblau/volta/cli/cmd"
 
 func main() {
 	cmd.Execute()

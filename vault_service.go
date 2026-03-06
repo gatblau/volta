@@ -28,7 +28,7 @@ package volta
 
 import (
 	"context"
-	"southwinds.dev/volta/audit"
+	"github.com/gatblau/volta/audit"
 	"time"
 )
 

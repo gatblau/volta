@@ -3,9 +3,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gatblau/volta"
 	"io"
 	"os"
-	"southwinds.dev/volta"
 	"strings"
 	"text/tabwriter"
 

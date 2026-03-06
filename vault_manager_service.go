@@ -1,7 +1,7 @@
 package volta
 
 import (
-	"southwinds.dev/volta/audit"
+	"github.com/gatblau/volta/audit"
 	"time"
 )
 

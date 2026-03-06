@@ -5,19 +5,20 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/awnumar/memguard"
-	"golang.org/x/crypto/chacha20poly1305"
 	"log"
 	mrand "math/rand"
 	"os"
 	"regexp"
-	"southwinds.dev/volta/audit"
-	"southwinds.dev/volta/internal/debug"
-	"southwinds.dev/volta/internal/mem"
-	"southwinds.dev/volta/persist"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/awnumar/memguard"
+	"github.com/gatblau/volta/audit"
+	"github.com/gatblau/volta/internal/debug"
+	"github.com/gatblau/volta/internal/mem"
+	"github.com/gatblau/volta/persist"
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
 const (
@@ -213,7 +214,7 @@ func NewWithStore(options Options, store persist.Store, auditLogger audit.Logger
 	if err != nil {
 		// Log warning but continue - memory protection failure is not fatal
 		// MemGuard will still provide enclave-based protection for sensitive data
-		fmt.Printf("WARNING: Cannot fully protect memory: %v\n", err)
+		fmt.Printf("WARNING: Cannot fully protect memory: %s\n", err.Error())
 		fmt.Println("However, MemGuard will still provide protection for encryption keys and secrets")
 	}
 	v.memoryProtectionLevel = protectionLevel
@@ -1734,7 +1735,7 @@ func combinerErr(errs []error) error {
 		sb.WriteString(err.Error())
 		sb.WriteString("; ")
 	}
-	return fmt.Errorf(strings.TrimRight(sb.String(), " "))
+	return fmt.Errorf("%s", strings.TrimRight(sb.String(), " "))
 }
 
 // DeleteTenant securely removes all resources associated with a specified tenant.

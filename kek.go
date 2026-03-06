@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"github.com/awnumar/memguard"
-	"southwinds.dev/volta/internal/crypto"
+	"github.com/gatblau/volta/internal/crypto"
 	"time"
 )
 

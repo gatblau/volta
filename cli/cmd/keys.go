@@ -3,8 +3,8 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gatblau/volta"
 	"os"
-	"southwinds.dev/volta"
 	"text/tabwriter"
 	"time"
 
