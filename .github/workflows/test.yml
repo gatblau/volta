@@ -1,0 +1,163 @@
+# This workflow tests Volta
+name: Go
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.25.8'
+          cache: false
+
+      - name: Run lint
+        id: lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: latest
+        continue-on-error: true
+
+      - name: Set lint status
+        run: |
+          if [ "${{ steps.lint.outcome }}" == "success" ]; then
+            echo "LINT_STATUS=passing" >> $GITHUB_ENV
+            echo "LINT_COLOR=brightgreen" >> $GITHUB_ENV
+          else
+            echo "LINT_STATUS=failing" >> $GITHUB_ENV
+            echo "LINT_COLOR=red" >> $GITHUB_ENV
+          fi
+
+      - name: Run security check
+        id: security
+        run: make security
+        continue-on-error: true
+
+      - name: Set security status
+        run: |
+          if [ "${{ steps.security.outcome }}" == "success" ]; then
+            echo "SECURITY_STATUS=passing" >> $GITHUB_ENV
+            echo "SECURITY_COLOR=brightgreen" >> $GITHUB_ENV
+          else
+            echo "SECURITY_STATUS=failing" >> $GITHUB_ENV
+            echo "SECURITY_COLOR=red" >> $GITHUB_ENV
+          fi
+
+      - name: Run tests with coverage
+        id: tests
+        run: |
+          set +e
+          make test
+          TEST_EXIT_CODE=$?
+          set -e
+
+          if [ $TEST_EXIT_CODE -ne 0 ]; then
+            echo "::warning::Tests exited with code $TEST_EXIT_CODE"
+          fi
+
+          if [ -f coverage.out ]; then
+            COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+          else
+            COVERAGE="0"
+          fi
+
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "TEST_STATUS=passing" >> $GITHUB_ENV
+            echo "TEST_COLOR=brightgreen" >> $GITHUB_ENV
+          else
+            echo "TEST_STATUS=failing" >> $GITHUB_ENV
+            echo "TEST_COLOR=red" >> $GITHUB_ENV
+          fi
+
+          COVERAGE_INT=$(echo "$COVERAGE" | awk '{print int($1)}')
+          if [ $COVERAGE_INT -ge 80 ]; then
+            echo "COVERAGE_COLOR=brightgreen" >> $GITHUB_ENV
+          elif [ $COVERAGE_INT -ge 60 ]; then
+            echo "COVERAGE_COLOR=yellow" >> $GITHUB_ENV
+          else
+            echo "COVERAGE_COLOR=red" >> $GITHUB_ENV
+          fi
+
+          if [ $TEST_EXIT_CODE -ne 0 ]; then
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Update badge data
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && always()
+        run: |
+          mkdir -p .github/badges
+
+          cat > .github/badges/tests.json << EOF
+          {
+            "schemaVersion": 1,
+            "label": "tests",
+            "message": "$TEST_STATUS",
+            "color": "$TEST_COLOR"
+          }
+          EOF
+
+          cat > .github/badges/coverage.json << EOF
+          {
+            "schemaVersion": 1,
+            "label": "coverage",
+            "message": "${COVERAGE}%",
+            "color": "$COVERAGE_COLOR"
+          }
+          EOF
+
+          cat > .github/badges/lint.json << EOF
+          {
+            "schemaVersion": 1,
+            "label": "lint",
+            "message": "$LINT_STATUS",
+            "color": "$LINT_COLOR"
+          }
+          EOF
+
+          cat > .github/badges/security.json << EOF
+          {
+            "schemaVersion": 1,
+            "label": "security",
+            "message": "$SECURITY_STATUS",
+            "color": "$SECURITY_COLOR"
+          }
+          EOF
+
+          cat .github/badges/tests.json
+          cat .github/badges/coverage.json
+          cat .github/badges/lint.json
+          cat .github/badges/security.json
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .github/badges/
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "update badges: tests $TEST_STATUS, coverage ${COVERAGE}%, lint $LINT_STATUS, security $SECURITY_STATUS"
+            git push
+          fi
+
+      - name: Fail if any check failed
+        if: always()
+        run: |
+          if [ "${{ steps.lint.outcome }}" == "failure" ] || \
+             [ "${{ steps.security.outcome }}" == "failure" ] || \
+             [ "${{ steps.tests.outcome }}" == "failure" ]; then
+            echo "One or more checks failed"
+            exit 1
+          fi
