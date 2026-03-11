@@ -531,7 +531,7 @@ func NewVaultManagerWithStoreFactory(baseOptions Options, storeFactory func(tena
 // Returns:
 //
 //	*VaultManager: Configured vault manager instance with specified storage backend
-func NewVaultManagerWithStoreConfig(baseOptions Options, storeConfig persist.StoreConfig, auditLogger audit.Logger) *VaultManager {
+func NewVaultManagerWithStoreConfig(baseOptions Options, storeConfig persist.StoreConfig, auditLogger audit.Logger) VaultManagerService {
 	return &VaultManager{
 		options: baseOptions,
 		storeFactory: func(tenantID string) (persist.Store, error) {

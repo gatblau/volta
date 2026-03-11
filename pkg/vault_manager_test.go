@@ -5,31 +5,27 @@ package pkg
 
 import (
 	"testing"
-
-	"github.com/gatblau/volta/internal/audit"
-	"github.com/gatblau/volta/internal/persist"
-	"github.com/gatblau/volta/internal/vault"
 )
 
 func TestNewVaultManagerFileStore(t *testing.T) {
 	opts := createTestOptions()
 	tempDir := t.TempDir()
 
-	mgr := NewVaultManagerFileStore(opts, tempDir, audit.NewNoOpLogger())
+	mgr := NewVaultManagerFileStore(opts, tempDir, NewNoOpLogger())
 	if mgr == nil {
 		t.Fatal("expected a non-nil VaultManagerService")
 	}
 
-	if _, ok := mgr.(*vault.VaultManager); !ok {
-		t.Fatalf("expected internal VaultManager implementation, got %T", mgr)
+	if _, ok := mgr.(*vaultManagerWrapper); !ok {
+		t.Fatalf("expected vaultManagerWrapper implementation, got %T", mgr)
 	}
 }
 
 func TestNewVaultManagerWithStoreFactory(t *testing.T) {
 	opts := createTestOptions()
-	manager := NewVaultManagerWithStoreFactory(opts, func(tenantID string) (persist.Store, error) {
-		return persist.NewFileSystemStore(t.TempDir(), tenantID)
-	}, audit.NewNoOpLogger())
+	manager := NewVaultManagerWithStoreFactory(opts, func(tenantID string) (Store, error) {
+		return NewFileSystemStore(t.TempDir(), tenantID)
+	}, NewNoOpLogger())
 
 	if manager == nil {
 		t.Fatal("expected non-nil VaultManagerService")
@@ -38,14 +34,14 @@ func TestNewVaultManagerWithStoreFactory(t *testing.T) {
 
 func TestNewVaultManagerWithStoreConfig(t *testing.T) {
 	opts := createTestOptions()
-	storeConfig := persist.StoreConfig{
-		Type: persist.StoreTypeFileSystem,
+	storeConfig := StoreConfig{
+		Type: StoreTypeFileSystem,
 		Config: map[string]interface{}{
 			"base_path": t.TempDir(),
 		},
 	}
 
-	manager := NewVaultManagerWithStoreConfig(opts, storeConfig, audit.NewNoOpLogger())
+	manager := NewVaultManagerWithStoreConfig(opts, storeConfig, NewNoOpLogger())
 	if manager == nil {
 		t.Fatal("expected non-nil VaultManagerService from store config")
 	}
@@ -53,7 +49,7 @@ func TestNewVaultManagerWithStoreConfig(t *testing.T) {
 
 func TestNewVaultManagerS3StoreError(t *testing.T) {
 	opts := createTestOptions()
-	cfg := persist.S3Config{
+	cfg := S3Config{
 		Endpoint:        "",
 		AccessKeyID:     "",
 		SecretAccessKey: "",
@@ -63,7 +59,7 @@ func TestNewVaultManagerS3StoreError(t *testing.T) {
 		Region:          "us-east-1",
 	}
 
-	mgr, err := NewVaultManagerS3Store(opts, cfg, audit.NewNoOpLogger())
+	mgr, err := NewVaultManagerS3Store(opts, cfg, NewNoOpLogger())
 	if err != nil {
 		t.Logf("S3 VaultManager creation failed (as expected in isolated test): %v", err)
 		return
@@ -76,12 +72,12 @@ func TestNewVaultManagerS3StoreError(t *testing.T) {
 
 func TestNewWithStore(t *testing.T) {
 	opts := createTestOptions()
-	store, err := persist.NewFileSystemStore(t.TempDir(), "test-tenant")
+	store, err := NewFileSystemStore(t.TempDir(), "test-tenant")
 	if err != nil {
 		t.Fatalf("failed to create file store: %v", err)
 	}
 
-	svc, err := NewWithStore(opts, store, audit.NewNoOpLogger(), "test-tenant")
+	svc, err := NewWithStore(opts, store, NewNoOpLogger(), "test-tenant")
 	if err != nil {
 		t.Fatalf("NewWithStore returned error: %v", err)
 	}
@@ -91,8 +87,8 @@ func TestNewWithStore(t *testing.T) {
 	}
 }
 
-func createTestOptions() vault.Options {
-	return vault.Options{
+func createTestOptions() Options {
+	return Options{
 		DerivationPassphrase: "test-passphrase",
 		EnableMemoryLock:     false,
 	}

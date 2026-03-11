@@ -6,8 +6,6 @@ package pkg
 import (
 	"context"
 	"time"
-
-	"github.com/gatblau/volta/internal/audit"
 )
 
 // VaultService defines the public interface for interacting with the vault.
@@ -142,7 +140,7 @@ type VaultService interface {
 	RotateKeyEncryptionKey(newPassphrase string, reason string) error
 
 	// GetAudit returns the audit logger instance used by this vault.
-	GetAudit() audit.Logger
+	GetAudit() Logger
 
 	// DeleteTenant securely removes all resources associated with a specified tenant.
 	DeleteTenant(tenantID string) error

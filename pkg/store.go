@@ -30,6 +30,9 @@ type DetailedBackupInfo = persist.DetailedBackupInfo
 // StoreConfig provides configuration for different storage backends.
 type StoreConfig = persist.StoreConfig
 
+// S3Config contains the configuration required to connect to S3 (MinIO).
+type S3Config = persist.S3Config
+
 // StoreType represents the different types of storage backends.
 type StoreType = persist.StoreType
 
