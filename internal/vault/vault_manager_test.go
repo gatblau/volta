@@ -587,7 +587,8 @@ func TestVaultManagerErrorHandling(t *testing.T) {
 		t.Error("Working vault should not be nil")
 	}
 
-	// Test ListTenants with failing store
+	// ListTenants should query the storage backend.
+	// Therefore, with a mock store that fails on listing, this should return an error.
 	failingListStoreFactory := func(tenantID string) (persist.Store, error) {
 		return &mockFailingListStore{}, nil
 	}

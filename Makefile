@@ -1,6 +1,6 @@
 # Makefile for release-engine
 
-.PHONY: lint test test-smoke security
+.PHONY: lint test test-smoke test-integration security
 
 # Check if golangci-lint is installed, if not install it
 lint-check:
@@ -15,13 +15,19 @@ lint: lint-check
 # Run tests with coverage (excluding smoke tests and examples - they have no production code to cover)
 test:
 	@echo "Running tests with coverage..."
-	@go test -tags=integration -coverprofile=coverage.out $$(go list ./pkg/... ./internal/...)
+	@COVERPKG=$$(go list ./pkg/... ./internal/... | tr '\n' ',' | sed 's/,$$//'); \
+	go test -tags=integration -v -timeout 30m -coverpkg=$$COVERPKG -coverprofile=coverage.out $$(go list ./pkg/... ./internal/...)
 	@go tool cover -func=coverage.out
 
 # Run smoke tests (containers verification - no production code to cover)
 test-smoke:
 	@echo "Running smoke tests (container verification)..."
 	@go test -tags=integration -v ./internal/smoke/...
+
+# Run integration tests (requires Docker for testcontainers)
+test-integration:
+	@echo "Running integration tests..."
+	@go test -v -timeout 30m ./pkg/integration/...
 
 test-race:
 	@echo "Running tests with race detection..."

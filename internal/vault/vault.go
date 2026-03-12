@@ -2253,7 +2253,7 @@ func (v *Vault) encryptWithKeyEnclave(data []byte, enclave *memguard.Enclave) ([
 
 func (v *Vault) logAudit(requestID, action string, err error, metadata map[string]interface{}) {
 	if v.audit == nil {
-		log.Printf("WAARNING: skipping audit logging, logger not initialized\n")
+		log.Printf("WARNING: skipping audit logging, logger not initialized\n")
 		return
 	}
 	if metadata == nil {

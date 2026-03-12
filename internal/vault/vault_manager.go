@@ -657,141 +657,24 @@ func NewVaultManagerS3Store(options Options, storeConfig persist.S3Config, audit
 //	STORAGE-BACKEND ENUMERATION:
 //	The method creates a temporary storage connection specifically for tenant
 //	discovery, bypassing tenant-specific initialization to access the global
-//	tenant registry. This approach ensures accurate tenant enumeration even
-//	when individual tenant vaults may be in various states (locked, unlocked,
-//	corrupted, or undergoing maintenance).
+//	tenant registry.
 //
 //	LIGHTWEIGHT OPERATION:
 //	Discovery operations are designed to be lightweight and non-intrusive,
-//	requiring minimal resources and avoiding any tenant-specific cryptographic
-//	operations. This ensures tenant enumeration can succeed even under
-//	resource-constrained conditions or partial system failures.
+//	requiring minimal resources and avoiding tenant-specific cryptographic
+//	operations.
 //
 //	CONSISTENT VIEW:
-//	The method provides a consistent point-in-time snapshot of available
-//	tenants, though the actual tenant states may change between enumeration
-//	and subsequent operations. Callers should handle tenant availability
-//	changes gracefully in subsequent operations.
-//
-// SECURITY CONSIDERATIONS:
-//
-//	AUTHORIZATION REQUIREMENTS:
-//	Tenant enumeration is a privileged operation that reveals organizational
-//	structure and tenant deployment patterns. Access should be restricted to
-//	administrative users and service accounts with legitimate operational
-//	requirements for tenant discovery.
-//
-//	INFORMATION DISCLOSURE:
-//	Tenant IDs may contain sensitive organizational information or reveal
-//	business relationships, customer structures, or deployment patterns.
-//	Results should be handled with appropriate confidentiality controls
-//	and never logged in plaintext or transmitted over unsecured channels.
-//
-//	AUDIT IMPLICATIONS:
-//	Tenant enumeration operations are fully audited, including the identity
-//	of the caller, timing, and the complete list of returned tenants. This
-//	supports compliance requirements and security monitoring for unauthorized
-//	reconnaissance activities.
-//
-// OPERATIONAL USE CASES:
-//
-//	ADMINISTRATIVE OPERATIONS:
-//	- Bulk operations across multiple tenants (key rotation, updates)
-//	- System maintenance and health checking procedures
-//	- Tenant lifecycle management and provisioning workflows
-//	- Monitoring and alerting system configuration
-//
-//	MONITORING AND OBSERVABILITY:
-//	- Health dashboard population and status reporting
-//	- Metrics collection and performance monitoring setup
-//	- Capacity planning and resource utilization analysis
-//	- Service discovery for tenant-specific monitoring endpoints
-//
-//	COMPLIANCE AND REPORTING:
-//	- Compliance audit preparation and tenant inventory
-//	- Security posture assessment across all tenants
-//	- Tenant-specific policy enforcement and validation
-//	- Regulatory reporting and documentation requirements
-//
-// ERROR HANDLING:
-//
-//	STORAGE BACKEND FAILURES:
-//	Storage connectivity issues, authentication failures, or backend
-//	unavailability result in immediate error return with no tenant
-//	information disclosed. Callers should implement appropriate retry
-//	logic with exponential backoff for transient failures.
-//
-//	PARTIAL FAILURES:
-//	If the storage backend is partially available or some tenant
-//	metadata is corrupted, the method returns successfully enumerated
-//	tenants rather than failing completely. This degraded-mode operation
-//	supports continued service availability during partial outages.
-//
-//	CONCURRENT MODIFICATIONS:
-//	Since tenant creation and deletion may occur concurrently with
-//	enumeration, the returned list represents a point-in-time snapshot
-//	that may not reflect real-time tenant availability. Callers must
-//	handle tenant availability changes in subsequent operations.
-//
-// PERFORMANCE CHARACTERISTICS:
-//
-//	SCALABILITY PROFILE:
-//	The operation scales linearly with the number of configured tenants
-//	and logarithmically with storage backend size. For deployments with
-//	thousands of tenants, consider implementing caching strategies or
-//	pagination for large-scale tenant enumeration operations.
-//
-//	RESOURCE UTILIZATION:
-//	Tenant discovery requires minimal CPU and memory resources but may
-//	consume significant I/O bandwidth for large tenant deployments.
-//	The temporary storage connection is automatically cleaned up to
-//	prevent resource leaks.
-//
-//	CACHING CONSIDERATIONS:
-//	Results may be cached for performance optimization, but cache
-//	invalidation must be carefully managed to ensure accuracy during
-//	tenant provisioning and deprovisioning operations. Consider
-//	implementing cache TTL policies appropriate for tenant change
-//	frequency.
-//
-// IMPLEMENTATION DETAILS:
-//
-//	TEMPORARY STORE PATTERN:
-//	The method creates a temporary store connection with an empty tenant
-//	ID, which signals the storage backend to operate in discovery mode
-//	rather than tenant-specific mode. This architectural pattern ensures
-//	clean separation between tenant-specific operations and administrative
-//	discovery operations.
-//
-//	RESOURCE CLEANUP:
-//	The temporary store connection is automatically closed via defer
-//	statement, ensuring proper resource cleanup even if the underlying
-//	ListTenants operation fails or panics. This prevents resource leaks
-//	in long-running services.
-//
-//	FACTORY ABSTRACTION:
-//	By using the storeFactory with an empty tenant ID, the method
-//	leverages the same factory pattern used for tenant-specific operations
-//	while accessing global tenant enumeration capabilities. This ensures
-//	consistent configuration and connection handling across all storage
-//	operations.
+//	The method provides a point-in-time snapshot of available tenants from
+//	the storage backend.
 //
 // Returns:
 //
 //	[]string: Slice of tenant IDs for all available tenants
-//	error: nil on success, error on storage failures or authorization issues
-//
-// Example Usage:
-//
-//	tenants, err := vaultManager.ListTenants()
-//	if err != nil {
-//	    log.Error("Failed to enumerate tenants", "error", err)
-//	    return err
-//	}
-//	log.Info("Discovered tenants", "count", len(tenants), "tenants", tenants)
+//	error: nil on success, error on storage failures
 func (tm *VaultManager) ListTenants() ([]string, error) {
-	// Create a temporary store to discover tenants
-	// We use empty tenant ID since we're just discovering
+	// Create a temporary store to discover tenants.
+	// We use empty tenant ID since we're listing all tenants from backend.
 	store, err := tm.storeFactory("")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create store for tenant discovery: %w", err)
@@ -3478,28 +3361,8 @@ func (tm *VaultManager) DeleteTenant(tenantID string) error {
 	var cleanupErrors []string
 	var cleanupDetails = make(map[string]interface{})
 
-	// Vault-specific cleanup
-	vaultCleanupStart := time.Now()
-	if err := vault.DeleteTenant(tenantID); err != nil {
-		cleanupErrors = append(cleanupErrors, fmt.Sprintf("vault deletion failed: %v", err))
-
-		tm.logAudit(requestID, "DELETE_TENANT_VAULT_CLEANUP_FAILED", tenantID, err, map[string]interface{}{
-			"cleanup_phase": "vault_deletion",
-			"error_type":    tm.categorizeError(err),
-			"duration_ms":   time.Since(vaultCleanupStart).Milliseconds(),
-		})
-
-		cleanupDetails["vault_cleanup_error"] = err.Error()
-		cleanupDetails["vault_cleanup_duration_ms"] = time.Since(vaultCleanupStart).Milliseconds()
-	} else {
-		tm.logAudit(requestID, "DELETE_TENANT_VAULT_CLEANUP_SUCCESS", tenantID, nil, map[string]interface{}{
-			"cleanup_phase": "vault_deletion",
-			"duration_ms":   time.Since(vaultCleanupStart).Milliseconds(),
-		})
-		cleanupDetails["vault_cleanup_duration_ms"] = time.Since(vaultCleanupStart).Milliseconds()
-	}
-
-	// Additional cleanup (connections, resources, etc.)
+	// Close in-memory resources first. This avoids closing after deletion,
+	// which can re-persist tenant files (e.g. secrets.meta) back to storage.
 	if closer, ok := vault.(io.Closer); ok {
 		closeStart := time.Now()
 		if err := closer.Close(); err != nil {
@@ -3520,6 +3383,27 @@ func (tm *VaultManager) DeleteTenant(tenantID string) error {
 			})
 			cleanupDetails["close_duration_ms"] = time.Since(closeStart).Milliseconds()
 		}
+	}
+
+	// Vault-specific cleanup in backing store
+	vaultCleanupStart := time.Now()
+	if err := vault.DeleteTenant(tenantID); err != nil {
+		cleanupErrors = append(cleanupErrors, fmt.Sprintf("vault deletion failed: %v", err))
+
+		tm.logAudit(requestID, "DELETE_TENANT_VAULT_CLEANUP_FAILED", tenantID, err, map[string]interface{}{
+			"cleanup_phase": "vault_deletion",
+			"error_type":    tm.categorizeError(err),
+			"duration_ms":   time.Since(vaultCleanupStart).Milliseconds(),
+		})
+
+		cleanupDetails["vault_cleanup_error"] = err.Error()
+		cleanupDetails["vault_cleanup_duration_ms"] = time.Since(vaultCleanupStart).Milliseconds()
+	} else {
+		tm.logAudit(requestID, "DELETE_TENANT_VAULT_CLEANUP_SUCCESS", tenantID, nil, map[string]interface{}{
+			"cleanup_phase": "vault_deletion",
+			"duration_ms":   time.Since(vaultCleanupStart).Milliseconds(),
+		})
+		cleanupDetails["vault_cleanup_duration_ms"] = time.Since(vaultCleanupStart).Milliseconds()
 	}
 
 	totalDuration := time.Since(startTime)
@@ -3551,7 +3435,7 @@ func (tm *VaultManager) DeleteTenant(tenantID string) error {
 // Utility functions
 func (tm *VaultManager) logAudit(requestID, action, tenantID string, err error, metadata map[string]interface{}) {
 	if tm.audit == nil {
-		log.Printf("WAARNING: skipping audit logging, logger not initialized\n")
+		log.Printf("WARNING: skipping audit logging, logger not initialized\n")
 		return
 	}
 	if metadata == nil {
@@ -3634,10 +3518,10 @@ func (tm *VaultManager) filterAuditEvents(events []audit.Event, options audit.Qu
 
 	for _, event := range events {
 		// Time range filter
-		if !options.Since.IsZero() && event.Timestamp.Before(*options.Since) {
+		if options.Since != nil && !options.Since.IsZero() && event.Timestamp.Before(*options.Since) {
 			continue
 		}
-		if !options.Until.IsZero() && event.Timestamp.After(*options.Until) {
+		if options.Until != nil && !options.Until.IsZero() && event.Timestamp.After(*options.Until) {
 			continue
 		}
 

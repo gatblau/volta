@@ -83,10 +83,18 @@ func NewFileLogger(config *Config) (*FileLogger, error) {
 
 // Log implements the Logger interface
 func (fl *FileLogger) Log(action string, success bool, metadata map[string]interface{}) error {
+	// Extract tenant ID from metadata if available, otherwise use the logger's tenant ID
+	tenantID := fl.tenantID
+	if metadata != nil {
+		if tid, ok := metadata["tenant_id"].(string); ok && tid != "" {
+			tenantID = tid
+		}
+	}
+
 	event := Event{
 		ID:        generateEventID(),
 		Timestamp: time.Now().UTC(),
-		TenantID:  fl.tenantID,
+		TenantID:  tenantID,
 		Action:    action,
 		Success:   success,
 		Metadata:  metadata,
